@@ -1,0 +1,41 @@
+name: CI - tests et qualité
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements-dev.txt
+
+      - name: Vérifier le style
+        run: ruff check app tests
+
+      - name: Exécuter les tests
+        run: pytest -q
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+      - name: Construire l'image Docker
+        run: docker build -t task-api:${{ github.sha }} .
